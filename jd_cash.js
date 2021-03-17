@@ -7,17 +7,17 @@
 ============Quantumultx===============
 [task_local]
 #签到领现金
-2 0 * * * https://gitee.com/lxk0301/jd_scripts/raw/master/jd_cash.js, tag=签到领现金, img-url=https://raw.githubusercontent.com/Orz-3/task/master/jd.png, enabled=true
+2 0-23/4 * * * https://jdsharedresourcescdn.azureedge.net/jdresource/jd_cash.js, tag=签到领现金, img-url=https://raw.githubusercontent.com/Orz-3/mini/master/Color/jd.png, enabled=true
 
 ================Loon==============
 [Script]
-cron "2 0 * * *" script-path=https://gitee.com/lxk0301/jd_scripts/raw/master/jd_cash.js,tag=签到领现金
+cron "2 0-23/4 * * *" script-path=https://jdsharedresourcescdn.azureedge.net/jdresource/jd_cash.js,tag=签到领现金
 
 ===============Surge=================
-签到领现金 = type=cron,cronexp="2 0 * * *",wake-system=1,timeout=3600,script-path=https://gitee.com/lxk0301/jd_scripts/raw/master/jd_cash.js
+签到领现金 = type=cron,cronexp="2 0-23/4 * * *",wake-system=1,timeout=3600,script-path=https://jdsharedresourcescdn.azureedge.net/jdresource/jd_cash.js
 
 ============小火箭=========
-签到领现金 = type=cron,script-path=https://gitee.com/lxk0301/jd_scripts/raw/master/jd_cash.js, cronexpr="2 0 * * *", timeout=3600, enable=true
+签到领现金 = type=cron,script-path=https://jdsharedresourcescdn.azureedge.net/jdresource/jd_cash.js, cronexpr="2 0-23/4 * * *", timeout=3600, enable=true
  */
 const $ = new Env('签到领现金');
 const notify = $.isNode() ? require('./sendNotify') : '';
@@ -27,12 +27,12 @@ let jdNotify = true;//是否关闭通知，false打开通知推送，true关闭�
 //IOS等用户直接用NobyDa的jd cookie
 let cookiesArr = [], cookie = '', message;
 let helpAuthor = false;
-const randomCount = $.isNode() ? 20 : 5;//const randomCount = $.isNode() ? 20 : 5;
+const randomCount = 0;//const randomCount = $.isNode() ? 20 : 5;
 const inviteCodes = [
   'eU9Ya--3YPQmojuBmiIWgw@eU9Ya-21Nagl9TjQynEa0A@eU9Yab2zZf4voDjTzXUa1A',
   '-pmvtW0-sG-d@eU9Ya-21Nagl9TjQynEa0A@eU9Yab2zZf4voDjTzXUa1A',
   '-pmvtW0-sG-d@eU9Ya--3YPQmojuBmiIWgw@eU9Yab2zZf4voDjTzXUa1A',
-  '-pmvtW0-sG-d@eU9Ya--3YPQmojuBmiIWgw@eU9Ya-21Nagl9TjQynEa0A'
+  '-pmvtW0-sG-d@eU9Ya--3YPQmojuBmiIWgw@eU9Ya-21Nagl9TjQynEa0A'													  
 ]
 if ($.isNode()) {
   Object.keys(jdCookieNode).forEach((item) => {
@@ -40,15 +40,16 @@ if ($.isNode()) {
   })
   if (process.env.JD_DEBUG && process.env.JD_DEBUG === 'false') console.log = () => {};
 } else {
-  let cookiesData = $.getdata('CookiesJD') || "[]";
-  cookiesData = jsonParse(cookiesData);
-  cookiesArr = cookiesData.map(item => item.cookie);
-  cookiesArr.reverse();
-  cookiesArr.push(...[$.getdata('CookieJD2'), $.getdata('CookieJD')]);
-  cookiesArr.reverse();
-  cookiesArr = cookiesArr.filter(item => item !== "" && item !== null && item !== undefined);
+  cookiesArr = [$.getdata('CookieJD'), $.getdata('CookieJD2'), ...jsonParse($.getdata('CookiesJD') || "[]").map(item => item.cookie)].filter(item => !!item);
+									   
+													
+					   
+																	  
+					   
+																							 
 }
 const JD_API_HOST = 'https://api.m.jd.com/client.action';
+let allMessage = '';
 !(async () => {
   if (!cookiesArr[0]) {
     $.msg($.name, '【提示】请先获取京东账号一cookie\n直接使用NobyDa的京东签到获取', 'https://bean.m.jd.com/bean/signIndex.action', {"open-url": "https://bean.m.jd.com/bean/signIndex.action"});
@@ -56,6 +57,7 @@ const JD_API_HOST = 'https://api.m.jd.com/client.action';
   }
   await requireConfig()
   await getAuthorShareCode();
+  await getAuthorShareCode2();
   for (let i = 0; i < cookiesArr.length; i++) {
     if (cookiesArr[i]) {
       cookie = cookiesArr[i];
@@ -77,6 +79,10 @@ const JD_API_HOST = 'https://api.m.jd.com/client.action';
       await jdCash()
     }
   }
+  if (allMessage) {
+    if ($.isNode() && (process.env.CASH_NOTIFY_CONTROL ? process.env.CASH_NOTIFY_CONTROL === 'false' : !!1)) await notify.sendNotify($.name, allMessage);
+    $.msg($.name, '', allMessage);
+  }
 })()
     .catch((e) => {
       $.log('', `❌ ${$.name}, 失败! 原因: ${e}!`, '')
@@ -88,8 +94,10 @@ async function jdCash() {
   await index()
   await shareCodesFormat()
   await helpFriends()
-  await index(true)
+				   
   await getReward()
+  await getReward('2')
+  await index(true)
   await showMsg()
 }
 function index(info=false) {
@@ -104,16 +112,21 @@ function index(info=false) {
             data = JSON.parse(data);
             if(data.code===0 && data.data.result){
               if(info){
-                message += `当前现金：${data.data.result.signMoney}`
+                if (message) {
+                  message += `当前现金：${data.data.result.signMoney}元`;
+                  allMessage += `京东账号${$.index}${$.nickName}\n${message}${$.index !== cookiesArr.length ? '\n\n' : ''}`;
+                }
+                message += `当前现金：${data.data.result.signMoney}元`;
                 return
               }
-              console.log(`您的助力码为${data.data.result.inviteCode}`)
+              // console.log(`您的助力码为${data.data.result.inviteCode}`)
+              console.log(`\n【京东账号${$.index}（${$.nickName || $.UserName}）的${$.name}好友互助码】${data.data.result.inviteCode}\n`);
               let helpInfo = {
                 'inviteCode': data.data.result.inviteCode,
                 'shareDate': data.data.result.shareDate
               }
               $.shareDate = data.data.result.shareDate;
-              $.log(`shareDate: ${$.shareDate}`)
+              // $.log(`shareDate: ${$.shareDate}`)
               // console.log(helpInfo)
               for(let task of data.data.result.taskInfos){
                 if (task.type === 4) {
@@ -221,9 +234,9 @@ function doTask(type,taskInfo) {
     })
   })
 }
-function getReward() {
+function getReward(source = 1) {
   return new Promise((resolve) => {
-    $.get(taskUrl("cash_mob_reward",{"source":1,"rewardNode":""}), (err, resp, data) => {
+    $.get(taskUrl("cash_mob_reward",{"source": Number(source),"rewardNode":""}), (err, resp, data) => {
       try {
         if (err) {
           console.log(`${JSON.stringify(err)}`)
@@ -231,11 +244,12 @@ function getReward() {
         } else {
           if (safeGet(data)) {
             data = JSON.parse(data);
-            if( data.code === 0 && data.data.bizCode === 0 ){
+            if (data.code === 0 && data.data.bizCode === 0) {
               console.log(`领奖成功，${data.data.result.shareRewardTip}【${data.data.result.shareRewardAmount}】`)
+              message += `领奖成功，${data.data.result.shareRewardTip}【${data.data.result.shareRewardAmount}元】\n`;
               // console.log(data.data.result.taskInfos)
-            }else{
-              console.log(`领奖失败，${data.data.bizMsg}`)
+            } else {
+              // console.log(`领奖失败，${data.data.bizMsg}`)
             }
           }
         }
@@ -365,9 +379,9 @@ function taskUrl(functionId, body = {}) {
   }
 }
 
-function getAuthorShareCode() {
+function getAuthorShareCode(url = "https://gitee.com/shylocks/updateTeam/raw/main/jd_cash.json") {
   return new Promise(resolve => {
-    $.get({url: "https://gitee.com/shylocks/updateTeam/raw/main/jd_cash.json",headers:{
+    $.get({url, headers:{
         "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1 Edg/87.0.4280.88"
       }}, async (err, resp, data) => {
       $.authorCode = [];
@@ -375,6 +389,28 @@ function getAuthorShareCode() {
         if (err) {
         } else {
           $.authorCode = JSON.parse(data)
+        }
+      } catch (e) {
+        $.logErr(e, resp)
+      } finally {
+        resolve();
+      }
+    })
+  })
+}
+function getAuthorShareCode2(url = "https://gitee.com/lxk0301/updateTeam/raw/master/shareCodes/jd_updateCash.json") {
+  return new Promise(resolve => {
+    $.get({url, headers:{
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1 Edg/87.0.4280.88"
+      }}, async (err, resp, data) => {
+      $.authorCode2 = [];
+      try {
+        if (err) {
+        } else {
+          $.authorCode2 = JSON.parse(data)
+          if ($.authorCode2 && $.authorCode2.length) {
+            $.authorCode.push(...$.authorCode2);
+          }
         }
       } catch (e) {
         $.logErr(e, resp)
@@ -411,7 +447,11 @@ function TotalBean() {
               $.isLogin = false; //cookie过期
               return
             }
-            $.nickName = data['base'].nickname;
+            if (data['retcode'] === 0) {
+              $.nickName = (data['base'] && data['base'].nickname) || $.UserName;
+            } else {
+              $.nickName = $.UserName
+            }
           } else {
             console.log(`京东服务器返回空数据`)
           }
