@@ -67,7 +67,7 @@ const typeMap = {
 			$.UserName = decodeURIComponent(cookie.match(/pt_pin=(.+?);/) && cookie.match(/pt_pin=(.+?);/)[1])
 			$.index = i + 1;
 			$.isLogin = true;
-			$.nickName = '';
+			$.nickName = '13750031424_p';
 			await TotalBean();
 			console.log(`\n开始【京东账号${$.index}】${$.nickName || $.UserName}\n`);
 			if (!$.isLogin) {
