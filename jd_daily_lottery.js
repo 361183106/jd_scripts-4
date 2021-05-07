@@ -198,6 +198,7 @@ async function createInvitation(missionInfo) {
        // {"code": 1,"content": "ML:864c0f36-880a-40f9-9f15-f9e6c4c2c247","data": "ML:864c0f36-880a-40f9-9f15-f9e6c4c2c247","errorMsg": "SUCCESS","msg": "SUCCESS","success": true}
        //{"code": 1,"content": "ML:fb84a54f-09de-46dd-8473-56d55f8e5469","data": "ML:fb84a54f-09de-46dd-8473-56d55f8e5469","errorMsg": "SUCCESS","msg": "SUCCESS","success": true}
              data = JSON.parse(data);
+        console.log(`DATA：${data}`);
         if (data.success === true) {
           $.helpCodeList.push({
             'use': $.UserName,
